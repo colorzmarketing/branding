@@ -119,7 +119,6 @@ export default function ParticipantTable({ participants }: Props) {
                 <th className="px-6 py-3 text-left font-medium">이름</th>
                 <th className="px-6 py-3 text-left font-medium">학교</th>
                 <th className="px-6 py-3 text-left font-medium">학번</th>
-                <th className="px-6 py-3 text-left font-medium">학년</th>
                 <th className="px-6 py-3 text-left font-medium">유입경로</th>
                 <th className="px-6 py-3 text-center font-medium">마케팅 동의</th>
                 <th className="px-6 py-3 text-left font-medium">이메일</th>
@@ -130,7 +129,7 @@ export default function ParticipantTable({ participants }: Props) {
             <tbody className="divide-y divide-gray-50">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-10 text-center text-gray-400">
+                  <td colSpan={8} className="px-6 py-10 text-center text-gray-400">
                     참여자가 없습니다.
                   </td>
                 </tr>
@@ -140,7 +139,6 @@ export default function ParticipantTable({ participants }: Props) {
                   <td className="px-6 py-3 font-medium text-gray-900">{p.name}</td>
                   <td className="px-6 py-3 text-gray-500">{p.school ?? "-"}</td>
                   <td className="px-6 py-3 text-gray-500">{p.student_id ?? "-"}</td>
-                  <td className="px-6 py-3 text-gray-500">{p.grade ?? "-"}</td>
                   <td className="px-6 py-3 text-gray-500">{p.channel ?? "-"}</td>
                   <td className="px-6 py-3 text-center">
                     {p.marketing_consent ? (

@@ -157,7 +157,7 @@ export default function CsvImport({ onClose }: Props) {
       {!preview && (
         <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
           <p className="font-medium text-gray-600">CSV 컬럼 형식 (순서 무관)</p>
-          <p className="font-mono">이름, 학교, 학번, 학년, 유입경로, 마케팅동의, 이메일, 전화번호</p>
+          <p className="font-mono">이름, 학교, 학번, 유입경로, 마케팅동의, 이메일, 전화번호</p>
           <p>마케팅동의: <span className="font-mono">동의 / 예 / true / 1</span> 중 하나</p>
         </div>
       )}
@@ -190,7 +190,6 @@ export default function CsvImport({ onClose }: Props) {
                   <th className="px-3 py-2 text-left">이름</th>
                   <th className="px-3 py-2 text-left">학교</th>
                   <th className="px-3 py-2 text-left">학번</th>
-                  <th className="px-3 py-2 text-left">학년</th>
                   <th className="px-3 py-2 text-left">유입경로</th>
                   <th className="px-3 py-2 text-center">동의</th>
                 </tr>
@@ -201,7 +200,6 @@ export default function CsvImport({ onClose }: Props) {
                     <td className="px-3 py-1.5 font-medium">{p.name}</td>
                     <td className="px-3 py-1.5 text-gray-500">{p.school ?? "-"}</td>
                     <td className="px-3 py-1.5 text-gray-500">{p.student_id ?? "-"}</td>
-                    <td className="px-3 py-1.5 text-gray-500">{p.grade ?? "-"}</td>
                     <td className="px-3 py-1.5 text-gray-500">{p.channel ?? "-"}</td>
                     <td className="px-3 py-1.5 text-center">
                       {p.marketing_consent ? (

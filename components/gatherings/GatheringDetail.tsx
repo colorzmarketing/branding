@@ -144,6 +144,7 @@ export default function GatheringDetail({ gathering, participants, companies }: 
                   <th className="px-4 py-2 text-left font-medium">학교</th>
                   <th className="px-4 py-2 text-left font-medium">학번</th>
                   <th className="px-4 py-2 text-left font-medium">유입경로</th>
+
                   <th className="px-4 py-2 text-center font-medium">추천</th>
                   <th className="px-4 py-2" />
                 </tr>

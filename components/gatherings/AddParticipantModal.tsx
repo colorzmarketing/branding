@@ -191,7 +191,7 @@ export default function AddParticipantModal({ gatheringId, alreadyIds, onClose, 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">{p.name}</p>
                   <p className="text-xs text-gray-400">
-                    {[p.school, p.student_id, p.grade].filter(Boolean).join(" · ") || "정보 없음"}
+                    {[p.school, p.student_id].filter(Boolean).join(" · ") || "정보 없음"}
                   </p>
                 </div>
                 {p.channel && <span className="text-xs text-gray-400 shrink-0">{p.channel}</span>}
@@ -247,7 +247,7 @@ export default function AddParticipantModal({ gatheringId, alreadyIds, onClose, 
               </div>
               <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
                 <p className="font-medium text-gray-600">CSV 컬럼 형식</p>
-                <p className="font-mono">이름, 학교, 학번, 학년, 유입경로, 마케팅동의, 이메일, 전화번호</p>
+                <p className="font-mono">이름, 학교, 학번, 유입경로, 마케팅동의, 이메일, 전화번호</p>
               </div>
             </>
           )}
@@ -267,7 +267,6 @@ export default function AddParticipantModal({ gatheringId, alreadyIds, onClose, 
                       <th className="px-3 py-2 text-left">이름</th>
                       <th className="px-3 py-2 text-left">학교</th>
                       <th className="px-3 py-2 text-left">학번</th>
-                      <th className="px-3 py-2 text-left">학년</th>
                       <th className="px-3 py-2 text-left">유입경로</th>
                       <th className="px-3 py-2 text-center">동의</th>
                     </tr>
@@ -278,7 +277,6 @@ export default function AddParticipantModal({ gatheringId, alreadyIds, onClose, 
                         <td className="px-3 py-1.5 font-medium">{p.name}</td>
                         <td className="px-3 py-1.5 text-gray-500">{p.school ?? "-"}</td>
                         <td className="px-3 py-1.5 text-gray-500">{p.student_id ?? "-"}</td>
-                        <td className="px-3 py-1.5 text-gray-500">{p.grade ?? "-"}</td>
                         <td className="px-3 py-1.5 text-gray-500">{p.channel ?? "-"}</td>
                         <td className="px-3 py-1.5 text-center">
                           {p.marketing_consent ? <span className="text-green-600">✓</span> : <span className="text-gray-300">-</span>}
