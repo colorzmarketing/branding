@@ -99,6 +99,20 @@ export async function deleteParticipant(id: string) {
   revalidatePath("/participants");
 }
 
+export async function removeParticipantFromGathering(
+  gatheringId: string,
+  participantId: string
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("gathering_participants")
+    .delete()
+    .eq("gathering_id", gatheringId)
+    .eq("participant_id", participantId);
+  if (error) throw error;
+  revalidatePath(`/gatherings/${gatheringId}`);
+}
+
 export async function addParticipantToGathering(
   gatheringId: string,
   participantId: string,

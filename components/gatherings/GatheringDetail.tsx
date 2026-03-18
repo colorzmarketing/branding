@@ -8,7 +8,9 @@ import { GatheringBadge } from "@/components/ui/Badge";
 import KpiCard from "@/components/ui/KpiCard";
 import Modal from "@/components/ui/Modal";
 import GatheringForm from "./GatheringForm";
+import AddParticipantModal from "./AddParticipantModal";
 import { updateGathering } from "@/lib/actions/gatherings";
+import { removeParticipantFromGathering } from "@/lib/actions/participants";
 
 interface Props {
   gathering: GatheringKpi;
@@ -24,12 +26,32 @@ function fmt(n: number | null | undefined) {
 export default function GatheringDetail({ gathering, participants, companies }: Props) {
   const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
+  const [showAddParticipant, setShowAddParticipant] = useState(false);
+  const [search, setSearch] = useState("");
 
   async function handleUpdate(data: GatheringFormData) {
     await updateGathering(gathering.id, data);
     setShowEdit(false);
     router.refresh();
   }
+
+  async function handleRemoveParticipant(participantId: string, name: string) {
+    if (!confirm(`"${name}"을(를) 이 게더링에서 제거할까요?`)) return;
+    await removeParticipantFromGathering(gathering.id, participantId);
+    router.refresh();
+  }
+
+  const filteredParticipants = participants.filter((gp) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (gp.participant?.name ?? "").toLowerCase().includes(q) ||
+      (gp.participant?.school ?? "").toLowerCase().includes(q) ||
+      (gp.participant?.student_id ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  const alreadyIds = participants.map((gp) => gp.participant_id);
 
   return (
     <div>
@@ -76,73 +98,143 @@ export default function GatheringDetail({ gathering, participants, companies }: 
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 참여자 목록 */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">참여자 ({gathering.participant_count}명)</h2>
+        {/* ── 참여자 목록 ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">
+              참여자
+              <span className="ml-1.5 text-sm font-normal text-gray-400">
+                {gathering.participant_count}명
+                {gathering.referral_count > 0 && ` · 추천 ${gathering.referral_count}명`}
+              </span>
+            </h2>
+            <button
+              onClick={() => setShowAddParticipant(true)}
+              className="flex items-center gap-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1.5 hover:bg-indigo-50"
+            >
+              + 참여자 추가
+            </button>
           </div>
-          <div className="overflow-y-auto max-h-64">
+
+          {/* 검색 */}
+          <div className="px-5 py-2 border-b border-gray-50">
+            <input
+              type="text"
+              placeholder="이름, 학교, 학번 검색..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full text-xs border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+            />
+          </div>
+
+          <div className="overflow-y-auto flex-1" style={{ maxHeight: "320px" }}>
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 bg-white">
                 <tr className="border-b border-gray-50 text-gray-400 text-xs">
                   <th className="px-4 py-2 text-left font-medium">이름</th>
                   <th className="px-4 py-2 text-left font-medium">학교</th>
+                  <th className="px-4 py-2 text-left font-medium">학번</th>
                   <th className="px-4 py-2 text-left font-medium">유입경로</th>
                   <th className="px-4 py-2 text-center font-medium">추천</th>
+                  <th className="px-4 py-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {participants.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-gray-400 text-xs">참여자 없음</td>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-xs">
+                      아직 참여자가 없습니다.
+                    </td>
                   </tr>
                 )}
-                {participants.map((gp) => (
-                  <tr key={gp.participant_id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium">{gp.participant?.name}</td>
-                    <td className="px-4 py-2 text-gray-500">{gp.participant?.school ?? "-"}</td>
-                    <td className="px-4 py-2 text-gray-500">{gp.participant?.channel ?? "-"}</td>
-                    <td className="px-4 py-2 text-center">
-                      {gp.referral ? (
+                {filteredParticipants.length === 0 && participants.length > 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-xs">
+                      검색 결과 없음
+                    </td>
+                  </tr>
+                )}
+                {filteredParticipants.map((gp) => (
+                  <tr key={gp.participant_id} className="hover:bg-gray-50 group">
+                    <td className="px-4 py-2.5 font-medium text-gray-900">
+                      {gp.participant?.name ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">
+                      {gp.participant?.school ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-400 text-xs">
+                      {gp.participant?.student_id ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">
+                      {gp.participant?.channel ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      {gp.referral && (
                         <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">추천</span>
-                      ) : null}
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button
+                        onClick={() => handleRemoveParticipant(gp.participant_id, gp.participant?.name ?? "")}
+                        className="text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        제거
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* 요약 푸터 */}
+          {participants.length > 0 && (
+            <div className="px-5 py-3 border-t border-gray-50 flex gap-4 text-xs text-gray-400">
+              <span>총 <b className="text-gray-700">{gathering.participant_count}명</b></span>
+              <span>추천유입 <b className="text-blue-600">{gathering.referral_count}명</b> ({gathering.referral_rate}%)</span>
+              <span>마케팅동의 <b className="text-green-600">
+                {participants.filter((gp) => gp.participant?.marketing_consent).length}명
+              </b></span>
+            </div>
+          )}
         </div>
 
-        {/* 협업기업 목록 */}
+        {/* ── 협업기업 목록 ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">협업기업 ({gathering.company_count}개)</h2>
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900">
+              협업기업
+              <span className="ml-1.5 text-sm font-normal text-gray-400">{gathering.company_count}개</span>
+            </h2>
           </div>
-          <div className="overflow-y-auto max-h-64">
+          <div className="overflow-y-auto max-h-80">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-50 text-gray-400 text-xs">
                   <th className="px-4 py-2 text-left font-medium">기업명</th>
                   <th className="px-4 py-2 text-left font-medium">업종</th>
                   <th className="px-4 py-2 text-left font-medium">역할</th>
+                  <th className="px-4 py-2 text-left font-medium">담당자</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {companies.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center text-gray-400 text-xs">협업기업 없음</td>
+                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400 text-xs">
+                      협업기업 없음
+                    </td>
                   </tr>
                 )}
                 {companies.map((gc) => (
                   <tr key={gc.company_id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium">
-                      <Link href={`/companies`} className="hover:text-indigo-600">
-                        {gc.company?.name}
+                    <td className="px-4 py-2.5 font-medium text-gray-900">
+                      <Link href="/companies" className="hover:text-indigo-600">
+                        {gc.company?.name ?? "-"}
                       </Link>
                     </td>
-                    <td className="px-4 py-2 text-gray-500">{gc.company?.industry ?? "-"}</td>
-                    <td className="px-4 py-2 text-gray-500">{gc.role ?? "-"}</td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">{gc.company?.industry ?? "-"}</td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">{gc.role ?? "-"}</td>
+                    <td className="px-4 py-2.5 text-gray-500 text-xs">{gc.company?.contact_name ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -165,6 +257,17 @@ export default function GatheringDetail({ gathering, participants, companies }: 
             initial={gathering}
             onSubmit={handleUpdate}
             onCancel={() => setShowEdit(false)}
+          />
+        </Modal>
+      )}
+
+      {showAddParticipant && (
+        <Modal title="참여자 추가" onClose={() => setShowAddParticipant(false)}>
+          <AddParticipantModal
+            gatheringId={gathering.id}
+            alreadyIds={alreadyIds}
+            onClose={() => setShowAddParticipant(false)}
+            onAdded={() => router.refresh()}
           />
         </Modal>
       )}
