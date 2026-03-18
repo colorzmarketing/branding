@@ -99,6 +99,42 @@ export async function deleteParticipant(id: string) {
   revalidatePath("/participants");
 }
 
+// CSV로 참여자 일괄 생성 + 게더링 연결
+export async function bulkAddParticipantsToGathering(
+  gatheringId: string,
+  rows: ParticipantFormData[]
+) {
+  const supabase = createClient();
+
+  // 1. 참여자 생성
+  const sanitized = rows.map((p) => ({
+    ...p,
+    email: p.marketing_consent ? p.email : null,
+    phone: p.marketing_consent ? p.phone : null,
+  }));
+  const { data: created, error: createErr } = await supabase
+    .from("participants")
+    .insert(sanitized)
+    .select("id");
+  if (createErr) throw createErr;
+
+  // 2. 게더링 연결
+  const links = (created ?? []).map((p) => ({
+    gathering_id: gatheringId,
+    participant_id: p.id,
+    referral: false,
+  }));
+  if (links.length > 0) {
+    const { error: linkErr } = await supabase
+      .from("gathering_participants")
+      .insert(links);
+    if (linkErr) throw linkErr;
+  }
+
+  revalidatePath(`/gatherings/${gatheringId}`);
+  revalidatePath("/participants");
+}
+
 export async function removeParticipantFromGathering(
   gatheringId: string,
   participantId: string
