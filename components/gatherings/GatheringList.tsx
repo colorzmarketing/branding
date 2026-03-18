@@ -6,6 +6,7 @@ import type { GatheringKpi, GatheringFormData } from "@/types";
 import { GatheringBadge } from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import GatheringForm from "./GatheringForm";
+import GatheringCsvImport from "./GatheringCsvImport";
 import { createGathering, deleteGathering } from "@/lib/actions/gatherings";
 import { useRouter } from "next/navigation";
 
@@ -16,6 +17,7 @@ interface Props {
 export default function GatheringList({ gatherings }: Props) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
 
   async function handleCreate(data: GatheringFormData) {
     await createGathering(data);
@@ -36,12 +38,20 @@ export default function GatheringList({ gatherings }: Props) {
           <h1 className="text-2xl font-bold text-gray-900">게더링 목록</h1>
           <p className="text-sm text-gray-500 mt-0.5">총 {gatherings.length}개</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-        >
-          + 게더링 추가
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCsvImport(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+          >
+            📂 CSV 가져오기
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+          >
+            + 게더링 추가
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -116,6 +126,12 @@ export default function GatheringList({ gatherings }: Props) {
             onSubmit={handleCreate}
             onCancel={() => setShowCreate(false)}
           />
+        </Modal>
+      )}
+
+      {showCsvImport && (
+        <Modal title="CSV로 게더링 가져오기" onClose={() => setShowCsvImport(false)}>
+          <GatheringCsvImport onClose={() => setShowCsvImport(false)} />
         </Modal>
       )}
     </div>
