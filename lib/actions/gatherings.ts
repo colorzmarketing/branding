@@ -75,6 +75,37 @@ export async function getGatheringCompanies(gatheringId: string) {
   }));
 }
 
+export async function addCompanyToGathering(
+  gatheringId: string,
+  companyId: string,
+  role: string | null
+) {
+  const supabase = createClient();
+  const { error } = await supabase.from("gathering_companies").insert({
+    gathering_id: gatheringId,
+    company_id: companyId,
+    role: role || null,
+  });
+  if (error) throw error;
+  revalidatePath(`/gatherings/${gatheringId}`);
+  revalidatePath("/companies");
+}
+
+export async function removeCompanyFromGathering(
+  gatheringId: string,
+  companyId: string
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("gathering_companies")
+    .delete()
+    .eq("gathering_id", gatheringId)
+    .eq("company_id", companyId);
+  if (error) throw error;
+  revalidatePath(`/gatherings/${gatheringId}`);
+  revalidatePath("/companies");
+}
+
 export async function getGatheringParticipants(gatheringId: string) {
   const supabase = createClient();
 

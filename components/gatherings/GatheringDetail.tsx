@@ -9,7 +9,8 @@ import KpiCard from "@/components/ui/KpiCard";
 import Modal from "@/components/ui/Modal";
 import GatheringForm from "./GatheringForm";
 import AddParticipantModal from "./AddParticipantModal";
-import { updateGathering } from "@/lib/actions/gatherings";
+import AddCompanyModal from "./AddCompanyModal";
+import { updateGathering, removeCompanyFromGathering } from "@/lib/actions/gatherings";
 import { removeParticipantFromGathering } from "@/lib/actions/participants";
 
 interface Props {
@@ -27,6 +28,7 @@ export default function GatheringDetail({ gathering, participants, companies }: 
   const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const [showAddParticipant, setShowAddParticipant] = useState(false);
+  const [showAddCompany, setShowAddCompany] = useState(false);
   const [search, setSearch] = useState("");
 
   async function handleUpdate(data: GatheringFormData) {
@@ -52,6 +54,13 @@ export default function GatheringDetail({ gathering, participants, companies }: 
   });
 
   const alreadyIds = participants.map((gp) => gp.participant_id);
+  const alreadyCompanyIds = companies.map((gc) => gc.company_id);
+
+  async function handleRemoveCompany(companyId: string, name: string) {
+    if (!confirm(`"${name}"을(를) 이 게더링에서 제거할까요?`)) return;
+    await removeCompanyFromGathering(gathering.id, companyId);
+    router.refresh();
+  }
 
   return (
     <div>
@@ -200,41 +209,62 @@ export default function GatheringDetail({ gathering, participants, companies }: 
         </div>
 
         {/* ── 협업기업 목록 ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="px-5 py-4 border-b border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">
               협업기업
               <span className="ml-1.5 text-sm font-normal text-gray-400">{gathering.company_count}개</span>
             </h2>
+            <button
+              onClick={() => setShowAddCompany(true)}
+              className="flex items-center gap-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1.5 hover:bg-indigo-50"
+            >
+              + 기업 연결
+            </button>
           </div>
-          <div className="overflow-y-auto max-h-80">
+          <div className="overflow-y-auto flex-1" style={{ maxHeight: "320px" }}>
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 bg-white">
                 <tr className="border-b border-gray-50 text-gray-400 text-xs">
                   <th className="px-4 py-2 text-left font-medium">기업명</th>
                   <th className="px-4 py-2 text-left font-medium">업종</th>
                   <th className="px-4 py-2 text-left font-medium">역할</th>
                   <th className="px-4 py-2 text-left font-medium">담당자</th>
+                  <th className="px-4 py-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {companies.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400 text-xs">
-                      협업기업 없음
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-xs">
+                      아직 연결된 협업기업이 없습니다.
                     </td>
                   </tr>
                 )}
                 {companies.map((gc) => (
-                  <tr key={gc.company_id} className="hover:bg-gray-50">
+                  <tr key={gc.company_id} className="hover:bg-gray-50 group">
                     <td className="px-4 py-2.5 font-medium text-gray-900">
                       <Link href="/companies" className="hover:text-indigo-600">
                         {gc.company?.name ?? "-"}
                       </Link>
                     </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{gc.company?.industry ?? "-"}</td>
-                    <td className="px-4 py-2.5 text-gray-500 text-xs">{gc.role ?? "-"}</td>
+                    <td className="px-4 py-2.5 text-xs">
+                      {gc.role ? (
+                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{gc.role}</span>
+                      ) : (
+                        <span className="text-gray-300">-</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-gray-500 text-xs">{gc.company?.contact_name ?? "-"}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      <button
+                        onClick={() => handleRemoveCompany(gc.company_id, gc.company?.name ?? "")}
+                        className="text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        제거
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -267,6 +297,17 @@ export default function GatheringDetail({ gathering, participants, companies }: 
             gatheringId={gathering.id}
             alreadyIds={alreadyIds}
             onClose={() => setShowAddParticipant(false)}
+            onAdded={() => router.refresh()}
+          />
+        </Modal>
+      )}
+
+      {showAddCompany && (
+        <Modal title="협업기업 연결" onClose={() => setShowAddCompany(false)}>
+          <AddCompanyModal
+            gatheringId={gathering.id}
+            alreadyIds={alreadyCompanyIds}
+            onClose={() => setShowAddCompany(false)}
             onAdded={() => router.refresh()}
           />
         </Modal>
