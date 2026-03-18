@@ -54,20 +54,46 @@ export async function deleteGathering(id: string) {
 
 export async function getGatheringCompanies(gatheringId: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
+
+  const { data: gcData, error: gcError } = await supabase
     .from("gathering_companies")
-    .select("*, company:companies(*)")
+    .select("*")
     .eq("gathering_id", gatheringId);
-  if (error) throw error;
-  return data ?? [];
+  if (gcError) throw gcError;
+  if (!gcData || gcData.length === 0) return [];
+
+  const companyIds = gcData.map((gc) => gc.company_id);
+  const { data: cData, error: cError } = await supabase
+    .from("companies")
+    .select("*")
+    .in("id", companyIds);
+  if (cError) throw cError;
+
+  return gcData.map((gc) => ({
+    ...gc,
+    company: (cData ?? []).find((c) => c.id === gc.company_id) ?? null,
+  }));
 }
 
 export async function getGatheringParticipants(gatheringId: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
+
+  const { data: gpData, error: gpError } = await supabase
     .from("gathering_participants")
-    .select("*, participant:participants(*)")
+    .select("*")
     .eq("gathering_id", gatheringId);
-  if (error) throw error;
-  return data ?? [];
+  if (gpError) throw gpError;
+  if (!gpData || gpData.length === 0) return [];
+
+  const participantIds = gpData.map((gp) => gp.participant_id);
+  const { data: pData, error: pError } = await supabase
+    .from("participants")
+    .select("*")
+    .in("id", participantIds);
+  if (pError) throw pError;
+
+  return gpData.map((gp) => ({
+    ...gp,
+    participant: (pData ?? []).find((p) => p.id === gp.participant_id) ?? null,
+  }));
 }
