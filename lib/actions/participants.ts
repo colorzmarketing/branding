@@ -12,7 +12,6 @@ export async function getParticipants(filters?: {
   const supabase = createClient();
 
   if (filters?.gathering_id) {
-    // 특정 게더링 참여자 조회
     let query = supabase
       .from("gathering_participants")
       .select("*, participant:participants(*)")
@@ -32,7 +31,6 @@ export async function getParticipants(filters?: {
     return rows;
   }
 
-  // 전체 참여자 조회
   let query = supabase
     .from("participants")
     .select("*")
@@ -48,7 +46,6 @@ export async function getParticipants(filters?: {
 }
 
 export async function createParticipant(formData: ParticipantFormData) {
-  // 비동의자는 이메일/연락처 저장 불가
   const sanitized = { ...formData };
   if (!sanitized.marketing_consent) {
     sanitized.email = null;
@@ -64,6 +61,19 @@ export async function createParticipant(formData: ParticipantFormData) {
   if (error) throw error;
   revalidatePath("/participants");
   return data.id as string;
+}
+
+export async function bulkCreateParticipants(rows: ParticipantFormData[]) {
+  const sanitized = rows.map((p) => ({
+    ...p,
+    email: p.marketing_consent ? p.email : null,
+    phone: p.marketing_consent ? p.phone : null,
+  }));
+
+  const supabase = createClient();
+  const { error } = await supabase.from("participants").insert(sanitized);
+  if (error) throw error;
+  revalidatePath("/participants");
 }
 
 export async function updateParticipant(id: string, formData: Partial<ParticipantFormData>) {

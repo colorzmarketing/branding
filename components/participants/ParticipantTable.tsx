@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Participant, ParticipantFormData } from "@/types";
 import Modal from "@/components/ui/Modal";
 import ParticipantForm from "./ParticipantForm";
+import CsvImport from "./CsvImport";
 import { createParticipant, updateParticipant, deleteParticipant } from "@/lib/actions/participants";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 export default function ParticipantTable({ participants }: Props) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [editing, setEditing] = useState<Participant | null>(null);
   const [filter, setFilter] = useState<{
     referral?: boolean;
@@ -61,12 +63,20 @@ export default function ParticipantTable({ participants }: Props) {
           <h1 className="text-2xl font-bold text-gray-900">참여자 DB</h1>
           <p className="text-sm text-gray-500 mt-0.5">총 {participants.length}명 · 필터 결과 {filtered.length}명</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-        >
-          + 참여자 추가
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCsvImport(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+          >
+            📂 CSV 가져오기
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+          >
+            + 참여자 추가
+          </button>
+        </div>
       </div>
 
       {/* 필터 바 */}
@@ -175,6 +185,12 @@ export default function ParticipantTable({ participants }: Props) {
           </table>
         </div>
       </div>
+
+      {showCsvImport && (
+        <Modal title="CSV로 참여자 가져오기" onClose={() => setShowCsvImport(false)}>
+          <CsvImport onClose={() => setShowCsvImport(false)} />
+        </Modal>
+      )}
 
       {showCreate && (
         <Modal title="참여자 추가" onClose={() => setShowCreate(false)}>
