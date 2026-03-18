@@ -16,6 +16,7 @@ export default function ParticipantForm({ initial, onSubmit, onCancel }: Props) 
   const [form, setForm] = useState<ParticipantFormData>({
     name: initial?.name ?? "",
     school: initial?.school ?? null,
+    student_id: initial?.student_id ?? null,
     grade: initial?.grade ?? null,
     channel: initial?.channel ?? null,
     marketing_consent: initial?.marketing_consent ?? false,
@@ -59,6 +60,18 @@ export default function ParticipantForm({ initial, onSubmit, onCancel }: Props) 
             placeholder="예: 연세대"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">학번</label>
+          <input
+            value={form.student_id ?? ""}
+            onChange={(e) => set("student_id", e.target.value || null)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            placeholder="예: 20210001"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
           <input

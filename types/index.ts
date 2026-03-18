@@ -53,6 +53,7 @@ export interface Participant {
   id: string;
   name: string;
   school: string | null;
+  student_id: string | null;
   grade: string | null;
   channel: string | null;
   marketing_consent: boolean;
