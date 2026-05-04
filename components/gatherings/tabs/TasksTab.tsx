@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { GatheringKpi, GatheringTask } from "@/types";
 import {
   createGatheringTask,
@@ -15,32 +15,38 @@ interface Props {
 }
 
 export default function TasksTab({ gathering, tasks, onRefresh }: Props) {
-  const [, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: "", assignee: "", budget: "" });
 
   const totalBudget = tasks.reduce((s, t) => s + (t.budget ?? 0), 0);
   const completedCount = tasks.filter((t) => t.completed).length;
 
-  function handleToggle(task: GatheringTask) {
-    startTransition(async () => {
-      await updateGatheringTask(task.id, gathering.id, { completed: !task.completed });
+  async function run(fn: () => Promise<void>) {
+    setLoading(true);
+    try {
+      await fn();
       onRefresh();
-    });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleToggle(task: GatheringTask) {
+    run(() => updateGatheringTask(task.id, gathering.id, { completed: !task.completed }));
   }
 
   function handleDelete(id: string) {
     if (!confirm("항목을 삭제할까요?")) return;
-    startTransition(async () => {
-      await deleteGatheringTask(id, gathering.id);
-      onRefresh();
-    });
+    run(() => deleteGatheringTask(id, gathering.id));
   }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) return;
-    startTransition(async () => {
+    await run(async () => {
       await createGatheringTask({
         gathering_id: gathering.id,
         title: form.title.trim(),
@@ -50,7 +56,6 @@ export default function TasksTab({ gathering, tasks, onRefresh }: Props) {
       });
       setForm({ title: "", assignee: "", budget: "" });
       setShowForm(false);
-      onRefresh();
     });
   }
 
@@ -111,7 +116,8 @@ export default function TasksTab({ gathering, tasks, onRefresh }: Props) {
             </button>
             <button
               type="submit"
-              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700"
+              disabled={loading}
+              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-60"
             >
               추가
             </button>
@@ -137,7 +143,8 @@ export default function TasksTab({ gathering, tasks, onRefresh }: Props) {
           >
             <button
               onClick={() => handleToggle(task)}
-              className={`flex-none w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              disabled={loading}
+              className={`flex-none w-5 h-5 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-60 ${
                 task.completed
                   ? "bg-indigo-600 border-indigo-600 text-white"
                   : "border-gray-300 hover:border-indigo-400"
@@ -168,7 +175,8 @@ export default function TasksTab({ gathering, tasks, onRefresh }: Props) {
 
             <button
               onClick={() => handleDelete(task.id)}
-              className="text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              disabled={loading}
+              className="text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
             >
               삭제
             </button>

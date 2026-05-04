@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { GatheringKpi, GatheringSnsItem } from "@/types";
 import {
   toggleSnsItem,
@@ -16,41 +16,43 @@ interface Props {
 }
 
 export default function SnsChecklistTab({ gathering, items, onRefresh }: Props) {
-  const [, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [addingPhase, setAddingPhase] = useState<"행사 전" | "행사 후" | null>(null);
   const [newItem, setNewItem] = useState("");
 
   const before = items.filter((i) => i.phase === "행사 전");
   const after = items.filter((i) => i.phase === "행사 후");
 
-  function handleToggle(item: GatheringSnsItem) {
-    startTransition(async () => {
-      await toggleSnsItem(item.id, gathering.id, !item.completed);
+  async function run(fn: () => Promise<void>) {
+    setLoading(true);
+    try {
+      await fn();
       onRefresh();
-    });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleToggle(item: GatheringSnsItem) {
+    run(() => toggleSnsItem(item.id, gathering.id, !item.completed));
   }
 
   function handleInit() {
-    startTransition(async () => {
-      await initSnsChecklist(gathering.id);
-      onRefresh();
-    });
+    run(() => initSnsChecklist(gathering.id));
   }
 
   function handleDelete(id: string) {
-    startTransition(async () => {
-      await deleteSnsItem(id, gathering.id);
-      onRefresh();
-    });
+    run(() => deleteSnsItem(id, gathering.id));
   }
 
   async function handleAdd(phase: "행사 전" | "행사 후") {
     if (!newItem.trim()) return;
-    startTransition(async () => {
+    await run(async () => {
       await addSnsItem(gathering.id, phase, newItem.trim());
       setNewItem("");
       setAddingPhase(null);
-      onRefresh();
     });
   }
 
@@ -70,7 +72,8 @@ export default function SnsChecklistTab({ gathering, items, onRefresh }: Props) 
         {items.length === 0 && (
           <button
             onClick={handleInit}
-            className="text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1.5 hover:bg-indigo-50"
+            disabled={loading}
+            className="text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-2.5 py-1.5 hover:bg-indigo-50 disabled:opacity-60"
           >
             기본 항목 불러오기
           </button>
@@ -113,7 +116,8 @@ export default function SnsChecklistTab({ gathering, items, onRefresh }: Props) 
                 />
                 <button
                   onClick={() => handleAdd(phase)}
-                  className="text-xs font-medium bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700"
+                  disabled={loading}
+                  className="text-xs font-medium bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-60"
                 >
                   추가
                 </button>
@@ -141,7 +145,8 @@ export default function SnsChecklistTab({ gathering, items, onRefresh }: Props) 
                 >
                   <button
                     onClick={() => handleToggle(item)}
-                    className={`flex-none w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    disabled={loading}
+                    className={`flex-none w-5 h-5 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-60 ${
                       item.completed
                         ? "bg-indigo-600 border-indigo-600 text-white"
                         : "border-gray-300 hover:border-indigo-400"
@@ -158,7 +163,8 @@ export default function SnsChecklistTab({ gathering, items, onRefresh }: Props) 
                   </span>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={loading}
+                    className="text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
                   >
                     삭제
                   </button>

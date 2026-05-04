@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { GatheringKpi } from "@/types";
 import { updateGathering } from "@/lib/actions/gatherings";
 
@@ -12,14 +12,19 @@ interface Props {
 export default function NotesTab({ gathering, onRefresh }: Props) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(gathering.notes ?? "");
-  const [, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
 
-  function handleSave() {
-    startTransition(async () => {
+  async function handleSave() {
+    setLoading(true);
+    try {
       await updateGathering(gathering.id, { notes: value || null });
       setEditing(false);
       onRefresh();
-    });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -58,7 +63,8 @@ export default function NotesTab({ gathering, onRefresh }: Props) {
             </button>
             <button
               onClick={handleSave}
-              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700"
+              disabled={loading}
+              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-60"
             >
               저장
             </button>

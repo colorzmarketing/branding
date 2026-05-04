@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { GatheringKpi, GatheringMeeting, GatheringMeetingFormData } from "@/types";
 import {
   createGatheringMeeting,
@@ -21,10 +21,22 @@ const EMPTY_FORM: Omit<GatheringMeetingFormData, "gathering_id"> = {
 };
 
 export default function MeetingsTab({ gathering, meetings, onRefresh }: Props) {
-  const [, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+
+  async function run(fn: () => Promise<void>) {
+    setLoading(true);
+    try {
+      await fn();
+      onRefresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function openNew() {
     setEditId(null);
@@ -57,23 +69,19 @@ export default function MeetingsTab({ gathering, meetings, onRefresh }: Props) {
       content: form.content || null,
     };
 
-    startTransition(async () => {
+    await run(async () => {
       if (editId) {
         await updateGatheringMeeting(editId, gathering.id, payload);
       } else {
         await createGatheringMeeting(payload);
       }
       handleCancel();
-      onRefresh();
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("회의록을 삭제할까요?")) return;
-    startTransition(async () => {
-      await deleteGatheringMeeting(id, gathering.id);
-      onRefresh();
-    });
+    run(() => deleteGatheringMeeting(id, gathering.id));
   }
 
   return (
@@ -133,7 +141,8 @@ export default function MeetingsTab({ gathering, meetings, onRefresh }: Props) {
             </button>
             <button
               type="submit"
-              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700"
+              disabled={loading}
+              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-60"
             >
               {editId ? "수정" : "추가"}
             </button>
@@ -175,7 +184,8 @@ export default function MeetingsTab({ gathering, meetings, onRefresh }: Props) {
                 </button>
                 <button
                   onClick={() => handleDelete(m.id)}
-                  className="text-xs text-red-300 hover:text-red-500"
+                  disabled={loading}
+                  className="text-xs text-red-300 hover:text-red-500 disabled:opacity-30"
                 >
                   삭제
                 </button>

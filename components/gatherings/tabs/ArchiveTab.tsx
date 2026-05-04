@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { GatheringKpi, GatheringArchive, ArchiveCategory } from "@/types";
 import {
   createGatheringArchive,
@@ -39,17 +39,29 @@ const EMPTY_FORM = {
 };
 
 export default function ArchiveTab({ gathering, archives, onRefresh }: Props) {
-  const [, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [filter, setFilter] = useState<ArchiveCategory | "전체">("전체");
 
   const filtered = filter === "전체" ? archives : archives.filter((a) => a.category === filter);
 
+  async function run(fn: () => Promise<void>) {
+    setLoading(true);
+    try {
+      await fn();
+      onRefresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) return;
-    startTransition(async () => {
+    await run(async () => {
       await createGatheringArchive({
         gathering_id: gathering.id,
         category: form.category,
@@ -59,16 +71,12 @@ export default function ArchiveTab({ gathering, archives, onRefresh }: Props) {
       });
       setForm(EMPTY_FORM);
       setShowForm(false);
-      onRefresh();
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("항목을 삭제할까요?")) return;
-    startTransition(async () => {
-      await deleteGatheringArchive(id, gathering.id);
-      onRefresh();
-    });
+    run(() => deleteGatheringArchive(id, gathering.id));
   }
 
   const grouped = CATEGORIES.reduce(
@@ -157,7 +165,8 @@ export default function ArchiveTab({ gathering, archives, onRefresh }: Props) {
             </button>
             <button
               type="submit"
-              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700"
+              disabled={loading}
+              className="text-xs font-medium bg-indigo-600 text-white px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-60"
             >
               추가
             </button>
@@ -165,7 +174,6 @@ export default function ArchiveTab({ gathering, archives, onRefresh }: Props) {
         </form>
       )}
 
-      {/* 카테고리 필터 */}
       <div className="flex gap-2 flex-wrap mb-5">
         {(["전체", ...CATEGORIES] as const).map((c) => (
           <button
@@ -193,7 +201,6 @@ export default function ArchiveTab({ gathering, archives, onRefresh }: Props) {
         </div>
       )}
 
-      {/* 카테고리별 그룹 */}
       <div className="space-y-5">
         {CATEGORIES.map((cat) => {
           const items = grouped[cat];
@@ -236,7 +243,8 @@ export default function ArchiveTab({ gathering, archives, onRefresh }: Props) {
                     </div>
                     <button
                       onClick={() => handleDelete(a.id)}
-                      className="flex-none text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      disabled={loading}
+                      className="flex-none text-xs text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30"
                     >
                       삭제
                     </button>

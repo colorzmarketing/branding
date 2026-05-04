@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { GatheringKpi, GatheringParticipant } from "@/types";
 import { updateParticipantFee, updateGathering } from "@/lib/actions/gatherings";
 
@@ -11,35 +11,34 @@ interface Props {
 }
 
 export default function FeeTab({ gathering, participants, onRefresh }: Props) {
-  const [, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [editingRefund, setEditingRefund] = useState<string | null>(null);
   const [refundInput, setRefundInput] = useState("");
   const [editingFee, setEditingFee] = useState(false);
   const [feeInput, setFeeInput] = useState(String(gathering.fee ?? ""));
 
   const paidCount = participants.filter((gp) => gp.fee_paid).length;
-  const refundTargets = participants.filter(
-    (gp) => gp.refund_account || gp.refunded
-  );
   const fee = gathering.fee ?? 0;
   const collectedAmount = paidCount * fee;
 
-  function handleTogglePaid(gp: GatheringParticipant) {
-    startTransition(async () => {
-      await updateParticipantFee(gathering.id, gp.participant_id, {
-        fee_paid: !gp.fee_paid,
-      });
+  async function run(fn: () => Promise<void>) {
+    setLoading(true);
+    try {
+      await fn();
       onRefresh();
-    });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleTogglePaid(gp: GatheringParticipant) {
+    run(() => updateParticipantFee(gathering.id, gp.participant_id, { fee_paid: !gp.fee_paid }));
   }
 
   function handleToggleRefunded(gp: GatheringParticipant) {
-    startTransition(async () => {
-      await updateParticipantFee(gathering.id, gp.participant_id, {
-        refunded: !gp.refunded,
-      });
-      onRefresh();
-    });
+    run(() => updateParticipantFee(gathering.id, gp.participant_id, { refunded: !gp.refunded }));
   }
 
   function openRefundEdit(gp: GatheringParticipant) {
@@ -48,28 +47,25 @@ export default function FeeTab({ gathering, participants, onRefresh }: Props) {
   }
 
   function handleSaveRefund(participantId: string) {
-    startTransition(async () => {
+    run(async () => {
       await updateParticipantFee(gathering.id, participantId, {
         refund_account: refundInput.trim() || null,
       });
       setEditingRefund(null);
-      onRefresh();
     });
   }
 
   function handleSaveFee() {
     const val = Number(feeInput);
     if (isNaN(val)) return;
-    startTransition(async () => {
+    run(async () => {
       await updateGathering(gathering.id, { fee: val });
       setEditingFee(false);
-      onRefresh();
     });
   }
 
   return (
     <div className="max-w-2xl space-y-6">
-      {/* 참가비 설정 */}
       <div className="bg-white rounded-xl border border-gray-100 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-900">참가비 관리</h2>
@@ -85,7 +81,8 @@ export default function FeeTab({ gathering, participants, onRefresh }: Props) {
                 />
                 <button
                   onClick={handleSaveFee}
-                  className="text-xs font-medium bg-indigo-600 text-white px-3 py-1.5 rounded-lg"
+                  disabled={loading}
+                  className="text-xs font-medium bg-indigo-600 text-white px-3 py-1.5 rounded-lg disabled:opacity-60"
                 >
                   저장
                 </button>
@@ -130,7 +127,6 @@ export default function FeeTab({ gathering, participants, onRefresh }: Props) {
         </div>
       </div>
 
-      {/* 납부 현황 */}
       <div className="bg-white rounded-xl border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-50">
           <h3 className="text-sm font-semibold text-gray-900">납부 현황</h3>
@@ -164,7 +160,8 @@ export default function FeeTab({ gathering, participants, onRefresh }: Props) {
                 <td className="px-4 py-2.5 text-center">
                   <button
                     onClick={() => handleTogglePaid(gp)}
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                    disabled={loading}
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors disabled:opacity-60 ${
                       gp.fee_paid
                         ? "bg-green-100 text-green-700 hover:bg-green-200"
                         : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -185,7 +182,8 @@ export default function FeeTab({ gathering, participants, onRefresh }: Props) {
                       />
                       <button
                         onClick={() => handleSaveRefund(gp.participant_id)}
-                        className="text-xs text-indigo-600 font-medium"
+                        disabled={loading}
+                        className="text-xs text-indigo-600 font-medium disabled:opacity-60"
                       >
                         저장
                       </button>
@@ -203,7 +201,8 @@ export default function FeeTab({ gathering, participants, onRefresh }: Props) {
                   {gp.refund_account ? (
                     <button
                       onClick={() => handleToggleRefunded(gp)}
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                      disabled={loading}
+                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors disabled:opacity-60 ${
                         gp.refunded
                           ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
                           : "bg-orange-50 text-orange-600 hover:bg-orange-100"

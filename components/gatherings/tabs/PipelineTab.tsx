@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { PIPELINE_STAGES } from "@/types";
 import type { GatheringKpi } from "@/types";
 import { updatePipeline } from "@/lib/actions/gatherings";
@@ -12,17 +12,23 @@ interface Props {
 
 export default function PipelineTab({ gathering, onRefresh }: Props) {
   const completed = gathering.pipeline_completed ?? [];
-  const [pending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
 
-  function toggle(stage: string) {
+  async function toggle(stage: string) {
+    if (loading) return;
     const next = completed.includes(stage)
       ? completed.filter((s) => s !== stage)
       : [...completed, stage];
 
-    startTransition(async () => {
+    setLoading(true);
+    try {
       await updatePipeline(gathering.id, next);
       onRefresh();
-    });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "저장 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const currentStageIndex = (() => {
@@ -48,7 +54,6 @@ export default function PipelineTab({ gathering, onRefresh }: Props) {
       </div>
 
       <div className="relative">
-        {/* 연결선 */}
         <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-gray-100" />
 
         <div className="space-y-3">
@@ -60,8 +65,8 @@ export default function PipelineTab({ gathering, onRefresh }: Props) {
               <button
                 key={stage}
                 onClick={() => toggle(stage)}
-                disabled={pending}
-                className={`relative flex items-center gap-4 w-full text-left p-4 rounded-xl border transition-all ${
+                disabled={loading}
+                className={`relative flex items-center gap-4 w-full text-left p-4 rounded-xl border transition-all disabled:opacity-60 ${
                   isDone
                     ? "bg-indigo-50 border-indigo-200"
                     : isCurrent
@@ -69,7 +74,6 @@ export default function PipelineTab({ gathering, onRefresh }: Props) {
                     : "bg-white border-gray-100 hover:border-gray-200"
                 }`}
               >
-                {/* 체크 원 */}
                 <span
                   className={`relative z-10 flex-none w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                     isDone
