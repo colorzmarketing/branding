@@ -1,0 +1,49 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Google Drive 백업 폴더 (소스는 루트에 복사됨)
+app-20260414T134049Z-3-001/
+components-20260414T134102Z-3-001/
+lib-20260414T134127Z-3-001/
+types-20260415T061436Z-3-001/
+drive-download-20260415T061644Z-3-001/
+drive-download-20260415T063015Z-3-001/
+next-20260414T134032Z-3-001/
+git-20260414T133958Z-3-001/
+node_modules-20260415T061714Z-3-001.zip
+gitignore
+env.download
